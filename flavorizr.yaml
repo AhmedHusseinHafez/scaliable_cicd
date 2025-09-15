@@ -1,0 +1,48 @@
+flavors:
+  dev:
+    app:
+      name: "[Dev] ScalableCI|CD"
+    android:
+      applicationId: "com.company.scalablecicd.dev"
+      icon: "assets/icons/ice-cream-development.png"
+      resValues:
+        app_name:
+          type: "string"
+          value: "ScalableCI|CD Dev"     
+    ios:
+      bundleId: "com.company.scalablecicd.dev"
+      icon: "assets/icons/ice-cream-development.png"
+
+  staging:
+    app:
+      name: "[Staging] ScalableCI|CD"
+    android:
+      applicationId: "com.company.scalablecicd.staging"
+      icon: "assets/icons/ice-cream-staging.png"
+      resValues:
+        app_name:
+          type: "string"
+          value: "ScalableCI|CD Staging" 
+    ios:
+      bundleId: "com.company.scalablecicd.staging"
+      icon: "assets/icons/ice-cream-staging.png"
+
+  prod:
+    app:
+      name: "ScalableCI|CD"
+    android:
+      applicationId: "com.company.scalablecicd"
+      icon: "assets/icons/ice-cream-prod.png"
+      resValues:
+        app_name:
+          type: "string"
+          value: "ScalableCI|CD" 
+    ios:
+      bundleId: "com.company.scalablecicd"
+      icon: "assets/icons/ice-cream-prod.png"
+      
+ide: vscode
+
+# app: An object describing the general capabilities of an app
+# flavors: An array of items. Each of them describes a flavor configuration
+# assetsUrl: A string containing the URL of the zip assets file. The default points to the current release
