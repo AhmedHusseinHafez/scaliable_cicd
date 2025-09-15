@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "305704400665",
+    "project_id": "scaliablecicdproduction",
+    "storage_bucket": "scaliablecicdproduction.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:305704400665:android:d3dcdf895e65eb15acb788",
+        "android_client_info": {
+          "package_name": "com.company.scalablecicd"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBfZlCfS7bTN97l35jRYV4PMcVNBCAXK1A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:scalable_cicd/firebase.dart';
 import 'dart:async';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'app.dart';
@@ -19,7 +20,7 @@ Future<void> main() async {
                 'https://235cf12b17c98406885d8971922d986a@o4510025900163072.ingest.de.sentry.io/4510025904226384';
           },
           appRunner: () async {
-            // await Firebase.initializeApp();
+            await initializeFirebaseApp();
             runApp(SentryWidget(child: App()));
           },
         );
@@ -29,7 +30,7 @@ Future<void> main() async {
       },
     );
   } else {
-    // await Firebase.initializeApp();
+    await initializeFirebaseApp();
     runApp(SentryWidget(child: App()));
   }
 }
