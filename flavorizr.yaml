@@ -1,0 +1,44 @@
+flavors:
+  dev:
+    app:
+      name: "[Dev] ScalableCI|CD"
+    android:
+      applicationId: "com.company.scalablecicd.dev"
+      icon: "assets/icons/ice-cream-development.png"
+      resValues:
+        app_name:
+          type: "string"
+          value: "[Dev] ScalableCI|CD"
+    ios:
+      bundleId: "com.company.scalablecicd.dev"
+      icon: "assets/icons/ice-cream-development.png"
+
+  staging:
+    app:
+      name: "[Staging] ScalableCI|CD"
+    android:
+      applicationId: "com.company.scalablecicd.staging"
+      icon: "assets/icons/ice-cream-staging.png"
+      resValues:
+        app_name:
+          type: "string"
+          value: "[Staging] ScalableCI|CD" 
+    ios:
+      bundleId: "com.company.scalablecicd.staging"
+      icon: "assets/icons/ice-cream-staging.png"
+
+  prod:
+    app:
+      name: "ScalableCI|CD"
+    android:
+      applicationId: "com.company.scalablecicd"
+      icon: "assets/icons/ice-cream-prod.png"
+      resValues:
+        app_name:
+          type: "string"
+          value: "ScalableCI|CD" 
+    ios:
+      bundleId: "com.company.scalablecicd"
+      icon: "assets/icons/ice-cream-prod.png"
+      
+ide: vscode
