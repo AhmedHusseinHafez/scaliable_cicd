@@ -2,6 +2,7 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+  
 jobs:
   build:
     name: Build Flutter Application
@@ -27,6 +28,7 @@ jobs:
 
       - name: bundle install
         run: bundle install
+        working-directory: ios
 
       - name: Install dependencies
         run: dart pub get
@@ -37,8 +39,17 @@ jobs:
       - name: Run tests
         run: flutter test
 
+      - name: Extract flavor from commit message
+        id: extract_flavor
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          echo "Commit message: $COMMIT_MSG"
+          FLAVOR=$(echo "$COMMIT_MSG" | grep -oP '(?<=build:)\w+')
+          echo "FLAVOR=$FLAVOR" >> $GITHUB_ENV
+
       - name: 📱 Build iOS Application
-        run: bundle exec fastlane ios build
+        run: bundle exec fastlane ios build flavor:$FLAVOR
+        working-directory: ios
         env:
           MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
