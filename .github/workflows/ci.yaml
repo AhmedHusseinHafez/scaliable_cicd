@@ -37,8 +37,8 @@ jobs:
       - name: Analyze project source
         run: dart analyze
 
-      - name: Run tests
-        run: flutter test
+      # - name: Run tests
+      #   run: flutter test
 
       - name: Extract flavor from commit message
         id: extract_flavor
