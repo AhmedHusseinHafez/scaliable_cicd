@@ -36,8 +36,8 @@ jobs:
         run: bundle install
         working-directory: ios
 
-      - name: Flutter version
-        run: flutter doctor
+      # - name: Flutter version
+      #   run: flutter doctor
 
       - name: Install dependencies
         run: flutter pub get
