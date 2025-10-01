@@ -38,7 +38,9 @@ platform :ios do
     )
 
     # Remove any old provisioning profiles or certificates that might conflict
-    clear_legacy_keychain(name: $keychain_name)
+    if $is_ci
+      sh("rm -rf ~/Library/MobileDevice/Provisioning\\ Profiles/*")
+    end
   end
 
   private_lane :remove_keychain do
@@ -80,7 +82,7 @@ platform :ios do
         keychain_password: $keychain_password
       )
 
-      # Development profiles (required for build/archive)
+      # Development profiles (required for archive to succeed)
       match(
         type: "development",
         readonly: true,
