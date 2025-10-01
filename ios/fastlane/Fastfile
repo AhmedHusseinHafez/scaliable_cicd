@@ -62,6 +62,7 @@ platform :ios do
   desc "Build iOS App"
   lane :build do |options|
     flavor_config(options)
+    match_sync
 
     build_app(
       workspace: "Runner.xcworkspace",
