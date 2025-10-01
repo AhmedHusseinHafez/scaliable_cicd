@@ -4,8 +4,4 @@ storage_mode("git")
 
 username(ENV["MATCH_USERNAME"]) 
 
-app_identifier([
-  "com.company.scalablecicd",
-  "com.company.scalablecicd.staging",
-  "com.company.scalablecicd.dev",
-]) # Bundle IDs
+app_identifier(ENV["APP_IDENTIFIER"])
