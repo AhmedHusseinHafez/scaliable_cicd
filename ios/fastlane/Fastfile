@@ -77,6 +77,14 @@ platform :ios do
             issuer_id: $issuer_id,
             key_content: $key_content,
         )
+        # api_key = app_store_connect_api_key(
+        #     key_id: "ZP3QK6MDW6",
+        #     issuer_id: "d0c54658-3338-4f5a-a7c5-1737db1698f4",
+        #     key_filepath: File.expand_path("../fastlane/AuthKey_ZP3QK6MDW6.p8", __dir__),
+        #     duration: 1200,
+        #     in_house: false,
+        #     is_key_content_base64: false
+        # )
         UI.message "Apple API key loaded successfully"
     end
 
@@ -135,8 +143,8 @@ platform :ios do
             workspace: "Runner.xcworkspace",
             scheme: $current_flavor,
             export_method: "app-store",
-            export_team_id: $team_id,
-            xcargs: "-allowProvisioningUpdates DEVELOPMENT_TEAM=#{$team_id}",
+            export_team_id: $team_id, 
+            xcargs: "-allowProvisioningUpdates DEVELOPMENT_TEAM=#{$team_id}", #KXF5M678R5
         )
     end
 end
