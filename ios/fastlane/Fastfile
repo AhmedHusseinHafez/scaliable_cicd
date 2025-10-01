@@ -63,16 +63,18 @@ platform :ios do
   lane :build do |options|
     flavor_config(options)
 
-    gym(
+    build_app(
       workspace: "Runner.xcworkspace",
       scheme: "staging", 
+      clean: true,
       configuration: "Release",
       export_method: "app-store",
       export_options: {
         provisioningProfiles: {
-          $app_identifier => "match AppStore #{$app_identifier}"
+          $app_identifier => "match AppStore com.company.scalablecicd.staging"
         }
-      }
+      },
+      xcargs: "-allowProvisioningUpdates DEVELOPMENT_TEAM=KXF5M678R5",
     )
   end
 
