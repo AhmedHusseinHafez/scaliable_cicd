@@ -1,8 +1,8 @@
-git_url(ENV["MATCH_GIT_URL"])  # git@github.com:AhmedHusseinHafez/ios-certificates-scalablecicd.git
+git_url(ENV["MATCH_GIT_URL"]) 
 
 storage_mode("git")
 
-username(ENV["MATCH_USERNAME"]) # husseina825@icloud.com
+username(ENV["MATCH_USERNAME"]) 
 
 app_identifier([
   "com.company.scalablecicd",

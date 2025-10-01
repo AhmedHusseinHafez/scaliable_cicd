@@ -5,37 +5,37 @@
     
     
       
-      <testcase classname="fastlane.lanes" name="0: Switch to ios flavor_config lane" time="0.000142">
+      <testcase classname="fastlane.lanes" name="0: Switch to ios flavor_config lane" time="0.000127">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="1: Switch to ios match_sync lane" time="7.9e-05">
+      <testcase classname="fastlane.lanes" name="1: Switch to ios match_sync lane" time="6.0e-05">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="2: Switch to ios login lane" time="6.6e-05">
+      <testcase classname="fastlane.lanes" name="2: Switch to ios login lane" time="5.7e-05">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="3: app_store_connect_api_key" time="0.005987">
+      <testcase classname="fastlane.lanes" name="3: app_store_connect_api_key" time="0.002952">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="4: match" time="3.494848">
+      <testcase classname="fastlane.lanes" name="4: match" time="3.070642">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="5: build_app" time="56.590558">
+      <testcase classname="fastlane.lanes" name="5: build_app" time="33.982873">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="6: Switch to ios remove_keychain lane" time="0.0001">
+      <testcase classname="fastlane.lanes" name="6: Switch to ios remove_keychain lane" time="0.000126">
         
       </testcase>
     
