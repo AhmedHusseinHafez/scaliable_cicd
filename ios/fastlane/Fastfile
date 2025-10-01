@@ -76,11 +76,11 @@ platform :ios do
       clean: true,
       configuration: "Release",
       export_method: "app-store",
-      export_options: {
-        provisioningProfiles: {
-          $app_identifier => "match AppStore com.company.scalablecicd.staging"
-        }
-      },
+    #   export_options: {
+    #     provisioningProfiles: {
+    #       $app_identifier => "match AppStore com.company.scalablecicd.staging"
+    #     }
+    #   },
       xcargs: "-allowProvisioningUpdates DEVELOPMENT_TEAM=KXF5M678R5",
     )
   end
