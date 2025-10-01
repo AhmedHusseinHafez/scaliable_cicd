@@ -81,6 +81,7 @@ platform :ios do
     #       $app_identifier => "match AppStore com.company.scalablecicd.staging"
     #     }
     #   },
+      export_team_id: "KXF5M678R5", 
       xcargs: "-allowProvisioningUpdates DEVELOPMENT_TEAM=KXF5M678R5",
     )
   end
