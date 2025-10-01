@@ -1,15 +1,18 @@
-on: 
-  push:
-  pull_request:
+name: iOS CI/CD
+
+on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
   
 jobs:
   build:
-    name: Build Flutter Application
     runs-on: self-hosted
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
       # - uses: ruby/setup-ruby@v1
       #   with:
@@ -27,20 +30,27 @@ jobs:
       - name: Use local Flutter SDK
         run: echo "/Users/mohamedsalem/Developer/flutter/bin" >> $GITHUB_PATH
 
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Install CocoaPods
+        working-directory: ios
+        run: pod install --repo-update
+
+      - name: bundle install
+        working-directory: ios
+        run: bundle install
+
       - name: Setup key
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY}}
 
-      - name: bundle install
-        run: bundle install
-        working-directory: ios
+
 
       # - name: Flutter version
       #   run: flutter doctor
 
-      - name: Install dependencies
-        run: flutter pub get
       
       # - name: Analyze project source
       #   run: dart analyze
@@ -60,6 +70,7 @@ jobs:
         run: bundle exec fastlane ios build flavor:staging
         working-directory: ios
         env:
+          APP_IDENTIFIER: ${{ secrets.APP_IDENTIFIER }}
           MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           MATCH_USERNAME: ${{ secrets.MATCH_USERNAME }}
@@ -68,3 +79,14 @@ jobs:
           APP_STORE_CONNECT_API_KEY_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY }}
           TEAM_ID: ${{ secrets.TEAM_ID }}
           CI: ${{ secrets.CI }}
+
+      - name: Upload to TestFlight
+        run: bundle exec fastlane ios upload
+        env:
+          CI: true
+          APP_IDENTIFIER: ${{ secrets.APP_IDENTIFIER }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          APP_STORE_CONNECT_API_KEY_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY_ID }}
+          APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY }}
