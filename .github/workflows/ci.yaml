@@ -11,15 +11,21 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      # - uses: ruby/setup-ruby@v1
+      #   with:
+      #     ruby-version: '3.1'
+
       - name: Check Ruby version
         run: ruby --version
 
-      - name: Install Flutter stable channel
-        uses: subosito/flutter-action@v2
-        id: flutter-action
-        with:
-          channel: stable
-      - run: flutter --version
+      # - name: Install Flutter stable channel
+      #   uses: subosito/flutter-action@v2
+      #   id: flutter-action
+      #   with:
+      #     channel: stable
+      # - run: flutter --version
+      - name: Use local Flutter SDK
+        run: echo "/Users/mohamedsalem/Developer/flutter/bin" >> $GITHUB_PATH
 
       - name: Setup key
         uses: webfactory/ssh-agent@v0.7.0
