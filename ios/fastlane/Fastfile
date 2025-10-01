@@ -4,6 +4,9 @@ default_platform(:ios)
 fastlane_require "dotenv"
 Dotenv.overload ".env.secrets" if File.exist?(".env.secrets")
 
+$keychain_name = SecureRandom.uuid
+$keychain_password = SecureRandom.hex(100)
+
 $dart_define_env_key = "DART_DEFINE"
 $app_identifier = ENV["APP_IDENTIFIER"] || "com.company.scalablecicd.staging"
 $is_ci = ENV["CI"]
@@ -37,16 +40,21 @@ platform :ios do
   lane :match_sync do
     login
     if $is_ci
-      setup_keychain(
-        name: "fastlane_tmp_keychain",
-        password: "fastlane_pwd"
-      )
+        create_keychain(
+            name: $keychain_name,
+            password: $keychain_password,
+            default_keychain: true,
+            unlock: false,
+            timeout: 0,
+            lock_when_sleeps: true
+        )
+    
       match(
         readonly: true,
         type: "appstore",
         app_identifier: $app_identifier,
-        keychain_name: "fastlane_tmp_keychain",
-        keychain_password: "fastlane_pwd"
+        keychain_name:$keychain_name,
+        keychain_password: $keychain_password
       )
     else
       match(readonly: true, type: "appstore", app_identifier: $app_identifier)
