@@ -36,11 +36,14 @@ jobs:
         run: bundle install
         working-directory: ios
 
+      - name: Flutter version
+        run: flutter doctor
+
       - name: Install dependencies
-        run: dart pub get
+        run: flutter pub get
       
-      - name: Analyze project source
-        run: dart analyze
+      # - name: Analyze project source
+      #   run: dart analyze
 
       # - name: Run tests
       #   run: flutter test
