@@ -1,143 +1,133 @@
 platform :ios do
-    $keychain_name = SecureRandom.uuid
-    $keychain_password = SecureRandom.hex(100)
-    $is_ci = ENV['CI']
-    $key_id = ENV["APP_STORE_CONNECT_API_KEY_KEY_ID"]
-    $issuer_id = ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"]
-    $key_content = ENV["APP_STORE_CONNECT_API_KEY_KEY"]
-    $team_id = ENV["TEAM_ID"]
-    $dart_define_env_key = "DART_DEFINES"
-    $current_flavor = "dev"  # Default flavor
+  require 'securerandom'
 
-    ##########################################
-    # Helper Method for Keychain Setup (CI)
-    ##########################################
+  ##########################################
+  # Global Variables
+  ##########################################
+  $is_ci = ENV['CI'] == "true"
+  $keychain_name = SecureRandom.uuid
+  $keychain_password = SecureRandom.hex(32)
+  $dart_define_env_key = "DART_DEFINES"
+  $current_flavor = "dev" # Default flavor
 
-    after_all do |lane, options|
-        remove_keychain
+  $key_id = ENV["APP_STORE_CONNECT_API_KEY_KEY_ID"]
+  $issuer_id = ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"]
+  $key_content = ENV["APP_STORE_CONNECT_API_KEY_KEY"]
+  $team_id = ENV["TEAM_ID"]
+
+  ##########################################
+  # Helper Methods
+  ##########################################
+
+  private_lane :set_flavor do |options|
+    flavor = options[:flavor] || "dev"
+    UI.message "Setting flavor to #{flavor}"
+    $current_flavor = flavor
+    ENV[$dart_define_env_key] = "flavor=#{flavor}"
+  end
+
+  private_lane :setup_keychain do
+    UI.message "Creating temporary keychain: #{$keychain_name}"
+    create_keychain(
+      name: $keychain_name,
+      password: $keychain_password,
+      default_keychain: true,
+      unlock: true,
+      timeout: 3600,
+      lock_when_sleeps: false
+    )
+
+    # Remove any old provisioning profiles or certificates that might conflict
+    clear_legacy_keychain(name: $keychain_name)
+  end
+
+  private_lane :remove_keychain do
+    if $is_ci
+      if File.exist?(File.expand_path("~/Library/Keychains/#{$keychain_name}-db"))
+        UI.message "Deleting keychain #{$keychain_name}"
+        delete_keychain(name: $keychain_name)
+      end
     end
+  end
 
-    error do |lane, exception, options|
-        remove_keychain
+  private_lane :login do
+    UI.message "Loading Apple API Key"
+    app_store_connect_api_key(
+      key_id: $key_id,
+      issuer_id: $issuer_id,
+      key_content: $key_content,
+    )
+  end
+
+  ##########################################
+  # Match Lanes
+  ##########################################
+
+  private_lane :match_sync do |options|
+    profile_type = options[:profile_type] || "appstore"
+
+    login
+
+    if $is_ci
+      UI.message "Setting up keychain for CI"
+      setup_keychain
+
+      # App Store profiles
+      match(
+        type: "appstore",
+        readonly: true,
+        keychain_name: $keychain_name,
+        keychain_password: $keychain_password
+      )
+
+      # Development profiles (required for build/archive)
+      match(
+        type: "development",
+        readonly: true,
+        keychain_name: $keychain_name,
+        keychain_password: $keychain_password
+      )
+    else
+      # Local development
+      match(
+        type: profile_type,
+        readonly: false
+      )
     end
+  end
 
-    desc "Remove Keychain from CI"
-    private_lane :remove_keychain do |options|
-        if $is_ci
-            if File.exist?(File.expand_path("~/Library/Keychains/#{$keychain_name}-db"))
-                UI.important "Deleting keychain #{$keychain_name}"
-                delete_keychain(name: $keychain_name)
-            else
-                UI.important "No keychain file found to delete"
-            end
-        end
-    end
+  ##########################################
+  # Build Lane
+  ##########################################
 
-    ##########################################
-    # Build Lanes
-    ##########################################
+  desc "Build iOS App"
+  lane :build do |options|
+    flavor_config = options[:flavor] || "dev"
+    set_flavor(flavor: flavor_config)
 
-    desc "Setup Keychain for match on CI"
-    private_lane :setup_keychain do |options|
-        create_keychain(
-            name: $keychain_name,
-            password: $keychain_password,
-            default_keychain: true,
-            unlock: false,
-            timeout: 0,
-            lock_when_sleeps: true
-        )
-    end
+    match_sync(profile_type: "appstore")
 
-    desc "Configure Flavor for Dart"
-    private_lane :flavor_config do |options|
-        if !options[:flavor]
-            UI.message "No Flavor provided, going with default (dev)"
-            set_flavor(flavor: "dev")
-            next
-        end
+    build_app(
+      workspace: "Runner.xcworkspace",
+      scheme: $current_flavor,
+      export_method: "app-store",
+      export_team_id: $team_id,
+      xcargs: "-allowProvisioningUpdates DEVELOPMENT_TEAM=#{$team_id}",
+      clean: true,
+      output_directory: "./build/ios",
+      output_name: "Runner"
+    )
+  end
 
-        if options[:flavor] == "dev" || options[:flavor] == "staging" || options[:flavor] == "prod"
-          set_flavor(flavor: options[:flavor])
-        else
-          UI.abort_with_message! "No supported flavor provided (#{options[:flavor]}). Supported values are 'dev', 'staging', 'prod'."
-        end
-    end
+  ##########################################
+  # After All / Error Handling
+  ##########################################
 
-    def set_flavor(flavor:)
-        UI.message "Setting flavor to #{flavor}"
-        $current_flavor = flavor
-        ENV[$dart_define_env_key] = "flavor=#{flavor}"
-    end
+  after_all do |lane, options|
+    remove_keychain
+  end
 
-    desc "Get Apple API Token"
-    private_lane :login do |options|
-        api_key = app_store_connect_api_key(
-            key_id:  $key_id,
-            issuer_id: $issuer_id,
-            key_content: $key_content,
-        )
-
-        UI.message "Apple API key loaded successfully"
-    end
-
-    desc "Install Certificates and Provisioning Profiles"
-    lane :match_sync do |options|
-        login
-        
-        profile_type = options[:profile_type] || "appstore"
-        
-        if $is_ci  
-            UI.message "Installing Apple Certificates and Provisioning Profiles for CI"
-            setup_keychain
-            match(
-                readonly: true,
-                type: profile_type,
-                keychain_name: $keychain_name,
-                keychain_password: $keychain_password
-            )
-        else
-            UI.message "Installing Apple Certificates and Provisioning Profiles for Local Development"
-            match(
-                readonly: true,
-                type: profile_type
-            )
-        end 
-    end
-
-    desc "Update Provisioning Profiles"
-    lane :match_update do |options|
-        if $is_ci
-            UI.abort_with_message! "Only run match_update locally!"
-        else
-            login
-            UI.message "Updating Provisioning Profiles for New Devices"
-
-            UI.message "Updating App Store Provisioning Profile"
-            match(
-                readonly: false,
-                type: "appstore"
-            )
-
-            UI.message "Updating Development Provisioning Profile"
-            match(
-                readonly: false,
-                type: "development"
-            )
-        end
-    end
-    
-    desc "Build iOS App"
-    lane :build do |options|
-        flavor_config options
-        match_sync(profile_type: "appstore")
-        
-        build_app(
-            workspace: "Runner.xcworkspace",
-            scheme: $current_flavor,
-            export_method: "app-store",
-            export_team_id: $team_id, 
-            xcargs: "-allowProvisioningUpdates DEVELOPMENT_TEAM=#{$team_id}",
-        )
-    end
+  error do |lane, exception, options|
+    remove_keychain
+  end
 end
