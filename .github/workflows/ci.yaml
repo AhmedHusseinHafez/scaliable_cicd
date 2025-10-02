@@ -65,7 +65,9 @@ jobs:
       #     echo "FLAVOR=$FLAVOR" >> $GITHUB_ENV
 
       - name: 📱 Build STAGING iOS Application
-        run: bundle exec fastlane ios staging
+        run: | 
+            bundle exec fastlane ios staging
+            bundle exec fastlane pilot builds
         working-directory: ios
         env:
           CI: true
