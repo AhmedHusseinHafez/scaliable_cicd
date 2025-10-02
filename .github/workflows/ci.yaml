@@ -75,6 +75,7 @@ jobs:
           APP_NAME: "[Staging] ScalableCI|CD"
           SCHEME: staging
           ITC_TEAM_NAME: ${{ secrets.ITC_TEAM_NAME }}
+          FASTLANE_ITC_TEAM_NAME: ${{ secrets.ITC_TEAM_NAME }}
           MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           MATCH_USERNAME: ${{ secrets.MATCH_USERNAME }}
