@@ -46,8 +46,6 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY}}
 
-
-
       # - name: Flutter version
       #   run: flutter doctor
 
@@ -66,29 +64,19 @@ jobs:
       #     FLAVOR=$(echo "$COMMIT_MSG" | grep -oP '(?<=build:)\w+')
       #     echo "FLAVOR=$FLAVOR" >> $GITHUB_ENV
 
-      - name: 📱 Build iOS Application
-        run: bundle exec fastlane ios build flavor:staging
+      - name: 📱 Build STAGING iOS Application
+        run: bundle exec fastlane ios staging
         working-directory: ios
         env:
-          APP_IDENTIFIER: ${{ secrets.APP_IDENTIFIER }}
-          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
-          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-          MATCH_USERNAME: ${{ secrets.MATCH_USERNAME }}
-          APP_STORE_CONNECT_API_KEY_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY_ID }}
-          APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
-          APP_STORE_CONNECT_API_KEY_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY }}
-          TEAM_ID: ${{ secrets.TEAM_ID }}
-          CI: ${{ secrets.CI }}
-
-      - name: Upload to TestFlight
-        run: bundle exec fastlane ios upload
-        env:
           CI: true
-          APP_IDENTIFIER: ${{ secrets.APP_IDENTIFIER }}
+          APP_STORE_APP_IDENTIFIER: com.company.scalablecicd.staging
+          APP_NAME: "[Staging] ScalableCI|CD"
+          SCHEME: staging
+          ITC_TEAM_NAME: ${{ secrets.ITC_TEAM_NAME }}
           MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           MATCH_USERNAME: ${{ secrets.MATCH_USERNAME }}
-          APP_STORE_CONNECT_API_KEY_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY_ID }}
-          APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
-          APP_STORE_CONNECT_API_KEY_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY }}
-          TEAM_ID: ${{ secrets.TEAM_ID }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
+          APP_STORE_TEAM_ID: ${{ secrets.TEAM_ID }}

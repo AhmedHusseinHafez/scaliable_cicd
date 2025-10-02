@@ -15,29 +15,13 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 ## iOS
 
-### ios match_sync
-
-```sh
-[bundle exec] fastlane ios match_sync
-```
-
-Install Certificates and Provisioning Profiles
-
-### ios match_update
-
-```sh
-[bundle exec] fastlane ios match_update
-```
-
-Update Provisioning Profiles
-
 ### ios build
 
 ```sh
 [bundle exec] fastlane ios build
 ```
 
-Build iOS App
+Push a new beta build to TestFlight
 
 ----
 

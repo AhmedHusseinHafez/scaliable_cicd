@@ -1,21 +1,3 @@
-# app_identifier("[[APP_IDENTIFIER]]") # The bundle identifier of your app
-# apple_id("[[APPLE_ID]]") # Your Apple Developer Portal username
-
-
-# For more information about the Appfile, see:
-#     https://docs.fastlane.tools/advanced/#appfile
-# If your project has different bundle identifiers per environment 
-# (i.e. beta, app store),
-# you can define that by using for_platform and/or for_lane block declarations.
-
-app_identifier "com.company.scalablecicd"
-apple_id "husseina825@icloud.com"
-team_id "KXF5M678R5"
-
-for_platform :ios do
-  team_id 'KXF5M678R5' # for all iOS related things
-  for_lane :beta do
-    app_identifier 'com.company.scalablecicd.staging'
-  end
-  
-end
+app_identifier ENV["APP_STORE_APP_IDENTIFIER"]
+apple_id ENV["MATCH_USERNAME"]
+team_id ENV["APP_STORE_TEAM_ID"]

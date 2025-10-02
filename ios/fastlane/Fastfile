@@ -1,100 +1,109 @@
-# fastlane/Fastfile
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
 default_platform(:ios)
 
-fastlane_require "dotenv"
-Dotenv.overload ".env.secrets" if File.exist?(".env.secrets")
-
-$keychain_name = SecureRandom.uuid
-$keychain_password = SecureRandom.hex(100)
-
-$dart_define_env_key = "DART_DEFINE"
-$app_identifier = ENV["APP_IDENTIFIER"] || "com.company.scalablecicd.staging"
-$is_ci = ENV["CI"]
-
 platform :ios do
-  ######################################################
-  # Lane لتجهيز الـ flavor
-  ######################################################
-  private_lane :flavor_config do |options|
-    flavor = options[:flavor] || "staging"
-    UI.message "👉 Setting flavor to #{flavor}"
-    ENV[$dart_define_env_key] = "flavor=#{flavor}"
+
+  $keychain_name = SecureRandom.uuid
+  $keychain_password = SecureRandom.hex(100)
+
+  after_all do |lane, options|
+      remove_keychain
   end
 
-  ######################################################
-  # Lane لتسجيل الدخول
-  ######################################################
-  desc "Login to App Store Connect"
-  lane :login do
-       api_key = app_store_connect_api_key(
-            key_id:  ENV["APP_STORE_CONNECT_API_KEY_KEY_ID"],
-            issuer_id: ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"],
-            key_content: ENV["APP_STORE_CONNECT_API_KEY_KEY"],
-        )
+  error do |lane, exception, options|
+      remove_keychain
   end
 
-  ######################################################
-  # Lane لمزامنة الشهادات
-  ######################################################
-  desc "Sync certificates and provisioning profiles"
-  lane :match_sync do
-    login
-    if $is_ci
+  desc "Remove Keychain from CI"
+  private_lane :remove_keychain do |options|
+      if $is_ci
+          if File.exist?(File.expand_path("~/Library/Keychains/#{$keychain_name}-db"))
+              UI.important "Deleting keychain #{$keychain_name}"
+              delete_keychain(name: $keychain_name)
+          else
+              UI.important "No keychain file found to delete"
+          end
+      end
+  end
+
+    desc "Setup Keychain for match on CI"
+    private_lane :setup_keychain do |options|
         create_keychain(
             name: $keychain_name,
             password: $keychain_password,
             default_keychain: true,
-            unlock: false,
+            unlock: true,
             timeout: 0,
-            lock_when_sleeps: true
+            lock_when_sleeps: false
         )
-    
-      match(
-        readonly: true,
-        type: "appstore",
-        app_identifier: $app_identifier,
-        keychain_name:$keychain_name,
-        keychain_password: $keychain_password
-      )
-    else
-      match(readonly: true, type: "appstore", app_identifier: $app_identifier)
-      match(readonly: true, type: "development", app_identifier: $app_identifier)
     end
-  end
 
-  ######################################################
-  # Lane للبناء
-  ######################################################
-  desc "Build iOS App"
-  lane :build do |options|
-    flavor_config(options)
-    match_sync
+  desc "Push a new beta build to TestFlight"
+  lane :staging do
+    # setup_ci() is useful in CI/CD (e.g., GitHub Actions) to disable prompts and configure environment
+    # On local machine, you can safely comment it out
+    setup_ci()
+
+     # Use the API key for authentication
+    app_store_connect_api_key( 
+      key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],            # Replace with your actual Key ID
+      issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],      # Replace with your actual Issuer ID
+      key_content: ENV["APP_STORE_CONNECT_API_KEY_CONTENT"]
+    )
+
+    # Ensure the app exists on App Store Connect (will create it if not found)
+    # create_app_online(
+    #   username:ENV["MATCH_USERNAME"],
+    #   app_identifier: ENV["APP_STORE_APP_IDENTIFIER"],
+    #   app_name: ENV["APP_NAME"],
+    #   language: "English",
+    #   sku: "SKU#{Time.now.to_i}", 
+    #   itc_team_name: ENV["ITC_TEAM_NAME"],
+    #   # skip_itc: true, # skip creation on App Store Connect if not needed
+    #   enable_services: {push_notification: "on"}
+    # )
+
+    setup_keychain
+
+    match(
+      type: "appstore",
+      readonly: true,
+      keychain_name: $keychain_name,
+      keychain_password: $keychain_password,
+    )  # Ensure the certificates and provisioning profiles are available
+
+    latest_build_number = latest_testflight_build_number(
+      app_identifier: ENV["APP_STORE_APP_IDENTIFIER"] # Replace with your actual app identifier
+    )
+    increment_build_number(build_number: latest_build_number + 1)
 
     build_app(
+      include_bitcode: true,
       workspace: "Runner.xcworkspace",
-      scheme: "staging", 
-      clean: true,
-      configuration: "Release",
-      export_method: "app-store",
-    #   export_options: {
-    #     provisioningProfiles: {
-    #       $app_identifier => "match AppStore com.company.scalablecicd.staging"
-    #     }
-    #   },
-      export_team_id: "KXF5M678R5", 
-      xcargs: "-allowProvisioningUpdates DEVELOPMENT_TEAM=KXF5M678R5",
-    )
-  end
+      scheme: ENV["SCHEME"],
+      export_options: {
+          method: "app-store",
+          provisioningProfiles: {
+            ENV["APP_STORE_APP_IDENTIFIER"] => "match AppStore #{ENV["APP_STORE_APP_IDENTIFIER"]}"
+          }
+      }
+    ) 
 
-  ######################################################
-  # Lane للرفع على TestFlight
-  ######################################################
-  desc "Upload build to TestFlight"
-  lane :upload do |options|
-    login
-    upload_to_testflight(
-      ipa: Actions.lane_context[SharedValues::IPA_OUTPUT_PATH],
-      skip_waiting_for_build_processing: false
-    )
+    upload_to_testflight(skip_waiting_for_build_processing: true)
   end
+  
 end
