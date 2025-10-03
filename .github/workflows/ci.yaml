@@ -57,6 +57,7 @@ jobs:
 
       - name: Pilot builds
         run: bundle exec fastlane pilot builds -a com.company.scalablecicd.staging
+        working-directory: ios
         env:
           CI: true 
           APP_STORE_APP_IDENTIFIER: com.company.scalablecicd.staging
