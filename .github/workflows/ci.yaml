@@ -14,17 +14,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.2'
-
-      # - name: Install Flutter stable channel
-      #   uses: subosito/flutter-action@v2
-      #   id: flutter-action
-      #   with:
-      #     channel: stable
-      #     cache: true
-
       - name: Use local Flutter SDK
         run: echo "/Users/mohamedsalem/Developer/flutter/bin" >> $GITHUB_PATH
 
@@ -48,28 +37,8 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY}}
 
-      # - name: Flutter version
-      #   run: flutter doctor
-
-      
-      # - name: Analyze project source
-      #   run: dart analyze
-
-      # - name: Run tests
-      #   run: flutter test
-
-      # - name: Extract flavor from commit message
-      #   id: extract_flavor
-      #   run: |
-      #     COMMIT_MSG=$(git log -1 --pretty=%B)
-      #     echo "Commit message: $COMMIT_MSG"
-      #     FLAVOR=$(echo "$COMMIT_MSG" | grep -oP '(?<=build:)\w+')
-      #     echo "FLAVOR=$FLAVOR" >> $GITHUB_ENV
-
       - name: 📱 Build STAGING iOS Application
-        run: | 
-            bundle exec fastlane ios staging
-            bundle exec fastlane pilot builds
+        run: bundle exec fastlane ios staging
         working-directory: ios
         env:
           CI: true
@@ -85,3 +54,7 @@ jobs:
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
           APP_STORE_TEAM_ID: ${{ secrets.TEAM_ID }}
+
+      - name: Pilot builds
+        run: bundle exec fastlane pilot builds -a com.company.scalablecicd.staging
+        working-directory: ios
