@@ -14,12 +14,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # - uses: ruby/setup-ruby@v1
-      #   with:
-      #     ruby-version: '3.1'
-
-      - name: Check Ruby version
-        run: ruby --version
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
 
       # - name: Install Flutter stable channel
       #   uses: subosito/flutter-action@v2
@@ -36,6 +33,10 @@ jobs:
       - name: Install CocoaPods
         working-directory: ios
         run: pod install --repo-update
+
+      - name: Update bundler
+        working-directory: ios
+        run: gem install bundler
 
       - name: bundle install
         working-directory: ios
