@@ -57,4 +57,18 @@ jobs:
 
       - name: Pilot builds
         run: bundle exec fastlane pilot builds -a com.company.scalablecicd.staging
-        working-directory: ios
+        env:
+          CI: true 
+          APP_STORE_APP_IDENTIFIER: com.company.scalablecicd.staging
+          APP_NAME: "[Staging] ScalableCI|CD"
+          SCHEME: staging
+          ITC_TEAM_NAME: ${{ secrets.ITC_TEAM_NAME }}
+          FASTLANE_ITC_TEAM_NAME: ${{ secrets.ITC_TEAM_NAME }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_USERNAME: ${{ secrets.MATCH_USERNAME }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
+          APP_STORE_TEAM_ID: ${{ secrets.TEAM_ID }}
+          working-directory: ios
