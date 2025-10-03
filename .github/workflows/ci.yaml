@@ -23,7 +23,7 @@ jobs:
         id: flutter-action
         with:
           channel: stable
-      - run: flutter --version
+          cache: true
 
       # - name: Use local Flutter SDK
       #   run: echo "/Users/mohamedsalem/Developer/flutter/bin" >> $GITHUB_PATH

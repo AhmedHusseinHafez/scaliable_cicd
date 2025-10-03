@@ -108,7 +108,7 @@ platform :ios do
 
   private_lane :upload_staging_to_test_flight do 
      upload_to_testflight(
-          # skip_waiting_for_build_processing: true,
+          skip_waiting_for_build_processing: true,
           username: ENV["MATCH_USERNAME"],
           app_identifier: ENV["APP_STORE_APP_IDENTIFIER"],
           notify_external_testers: false,
