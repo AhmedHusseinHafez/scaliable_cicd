@@ -102,8 +102,48 @@ platform :ios do
           }
       }
     ) 
+    upload_staging_to_test_flight
+    # upload_to_testflight(skip_waiting_for_build_processing: true)
+  end
 
-    upload_to_testflight(skip_waiting_for_build_processing: true)
+  private_lane :upload_staging_to_test_flight do 
+     upload_to_testflight(
+          # skip_waiting_for_build_processing: true,
+          username: ENV["MATCH_USERNAME"],
+          app_identifier: ENV["APP_STORE_APP_IDENTIFIER"],
+          notify_external_testers: false,
+          # beta_app_review_info: {
+          #   contact_email: "email@email.com",
+          #   contact_first_name: "Connect",
+          #   contact_last_name: "API",
+          #   contact_phone: "5558675309",
+          #   demo_account_name: "demo@email.com",
+          #   demo_account_password: "connectapi",
+          #   notes: "this is review note for the reviewer <3 thank you for reviewing"
+          # },
+          # localized_app_info: {
+          #   "default": {
+          #     feedback_email: "default@email.com",
+          #     marketing_url: "https://example.com/marketing-default",
+          #     privacy_policy_url: "https://example.com/privacy-default",
+          #     description: "Default description",
+          #   },
+            # "en-GB": {
+            #   feedback_email: "en-gb@email.com",
+            #   marketing_url: "https://example.com/marketing-en-gb",
+            #   privacy_policy_url: "https://example.com/privacy-en-gb",
+            #   description: "en-gb description",
+            # }
+          # },
+          localized_build_info: {
+            "default": {
+              whats_new: "Default changelog",
+            },
+            "en-GB": {
+              whats_new: "en-gb changelog",
+            }
+          }
+        )
   end
   
 end

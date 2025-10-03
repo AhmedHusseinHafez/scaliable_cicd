@@ -5,37 +5,62 @@
     
     
       
-      <testcase classname="fastlane.lanes" name="0: default_platform" time="0.000262">
+      <testcase classname="fastlane.lanes" name="00: default_platform" time="0.000245">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="1: app_store_connect_api_key" time="0.001638">
+      <testcase classname="fastlane.lanes" name="01: setup_ci" time="0.000141">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="2: Switch to ios setup_keychain lane" time="0.000136">
+      <testcase classname="fastlane.lanes" name="02: app_store_connect_api_key" time="0.007637">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="3: create_keychain" time="0.09686">
+      <testcase classname="fastlane.lanes" name="03: Switch to ios setup_keychain lane" time="0.000114">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="4: match" time="4.657728">
+      <testcase classname="fastlane.lanes" name="04: create_keychain" time="0.10724">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="5: build_app" time="35.225693">
+      <testcase classname="fastlane.lanes" name="05: match" time="4.596656">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="6: upload_to_testflight" time="738.461509">
+      <testcase classname="fastlane.lanes" name="06: latest_testflight_build_number" time="1.690875">
+        
+      </testcase>
+    
+      
+      <testcase classname="fastlane.lanes" name="07: increment_build_number" time="0.191366">
+        
+      </testcase>
+    
+      
+      <testcase classname="fastlane.lanes" name="08: build_app" time="40.606616">
+        
+      </testcase>
+    
+      
+      <testcase classname="fastlane.lanes" name="09: Switch to ios upload_staging_to_test_flight lane" time="0.000125">
+        
+      </testcase>
+    
+      
+      <testcase classname="fastlane.lanes" name="10: upload_to_testflight" time="62.996622">
+        
+      </testcase>
+    
+      
+      <testcase classname="fastlane.lanes" name="11: Switch to ios remove_keychain lane" time="0.000167">
         
       </testcase>
     
