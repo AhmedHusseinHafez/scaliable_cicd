@@ -17,135 +17,318 @@ default_platform(:ios)
 
 platform :ios do
 
+  # MARK: - 1: Global variables
   $keychain_name = SecureRandom.uuid
   $keychain_password = SecureRandom.hex(100)
+  $is_ci = ENV['CI'] || false
+
+  # MARK: - 2: Hooks
+  before_all do |lane, options|
+    ensure_git_status_clean unless $is_ci
+    UI.message "Starting lane: #{lane}"
+  end
 
   after_all do |lane, options|
-      remove_keychain
+    remove_keychain
+    UI.success "Successfully completed lane: #{lane}"
   end
 
   error do |lane, exception, options|
-      remove_keychain
+    remove_keychain
+    UI.error "Lane #{lane} failed with error: #{exception.message}"
   end
 
+  # MARK: - 3: Keychain Management
   desc "Remove Keychain from CI"
   private_lane :remove_keychain do |options|
-      if $is_ci
-          if File.exist?(File.expand_path("~/Library/Keychains/#{$keychain_name}-db"))
-              UI.important "Deleting keychain #{$keychain_name}"
-              delete_keychain(name: $keychain_name)
-          else
-              UI.important "No keychain file found to delete"
-          end
+    if $is_ci
+      if File.exist?(File.expand_path("~/Library/Keychains/#{$keychain_name}-db"))
+        UI.important "Deleting keychain #{$keychain_name}"
+        delete_keychain(name: $keychain_name)
+      else
+        UI.important "No keychain file found to delete"
       end
+    end
   end
 
-    desc "Setup Keychain for match on CI"
-    private_lane :setup_keychain do |options|
-        create_keychain(
-            name: $keychain_name,
-            password: $keychain_password,
-            default_keychain: true,
-            unlock: true,
-            timeout: 0,
-            lock_when_sleeps: false
-        )
-    end
-
-  desc "Push a new beta build to TestFlight"
-  lane :staging do
-    # setup_ci() is useful in CI/CD (e.g., GitHub Actions) to disable prompts and configure environment
-    # On local machine, you can safely comment it out
-    setup_ci()
-
-     # Use the API key for authentication
-    app_store_connect_api_key( 
-      key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],            # Replace with your actual Key ID
-      issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],      # Replace with your actual Issuer ID
-      key_content: ENV["APP_STORE_CONNECT_API_KEY_CONTENT"]
+  desc "Setup Keychain for match on CI"
+  private_lane :setup_keychain do |options|
+    create_keychain(
+      name: $keychain_name,
+      password: $keychain_password,
+      default_keychain: true,
+      unlock: true,
+      timeout: 0,
+      lock_when_sleeps: false
     )
+  end
 
-    # Ensure the app exists on App Store Connect (will create it if not found)
-    # create_app_online(
-    #   username:ENV["MATCH_USERNAME"],
-    #   app_identifier: ENV["APP_STORE_APP_IDENTIFIER"],
-    #   app_name: ENV["APP_NAME"],
-    #   language: "English",
-    #   sku: "SKU#{Time.now.to_i}", 
-    #   itc_team_name: ENV["ITC_TEAM_NAME"],
-    #   # skip_itc: true, # skip creation on App Store Connect if not needed
-    #   enable_services: {push_notification: "on"}
-    # )
+  # MARK: - 4: Authentication
+  desc "Configure App Store Connect API authentication"
+  private_lane :setup_app_store_connect do |options|
+    app_store_connect_api_key(
+      key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
+      issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
+      key_content: ENV["APP_STORE_CONNECT_API_KEY_CONTENT"],
+    )
+  end
 
-    setup_keychain
-
+  # MARK: - 5: Code Signing
+  desc "Setup code signing with match"
+  ##################################################################################
+  # 📦 setup_code_signing
+  #
+  # Purpose:
+  #   Sets up the code signing environment for building and distributing the app.
+  #   This lane is designed mainly for CI/CD environments.
+  #
+  # How it works:
+  #   - If running on CI, it creates a temporary keychain (via `setup_keychain`)
+  #   - Uses `match` with readonly: true to download existing certificates and provisioning profiles
+  #   - Adds them to the active keychain so Xcode and Fastlane can sign the build
+  #
+  # Parameters:
+  #   - type: The provisioning type ("appstore", "development", etc.)
+  #
+  # Notes:
+  #   - Does NOT create or update certificates (readonly mode)
+  #   - Safe for automated build pipelines
+  #
+  ##################################################################################
+  private_lane :setup_code_signing do |options|
+    type = options[:type] || "appstore"
+    
+    setup_keychain if $is_ci
+    
     match(
-      type: "appstore",
+      type: type,
       readonly: true,
       keychain_name: $keychain_name,
       keychain_password: $keychain_password,
-    )  # Ensure the certificates and provisioning profiles are available
-
-    latest_build_number = latest_testflight_build_number(
-      app_identifier: ENV["APP_STORE_APP_IDENTIFIER"] # Replace with your actual app identifier
+      app_identifier: ENV["APP_STORE_APP_IDENTIFIER"]
     )
-    increment_build_number(build_number: latest_build_number + 1)
-
-    build_app(
-      include_bitcode: true,
-      workspace: "Runner.xcworkspace",
-      scheme: ENV["SCHEME"],
-      export_options: {
-          method: "app-store",
-          provisioningProfiles: {
-            ENV["APP_STORE_APP_IDENTIFIER"] => "match AppStore #{ENV["APP_STORE_APP_IDENTIFIER"]}"
-          }
-      }
-    ) 
-    upload_to_testflight(
-      skip_waiting_for_build_processing: true
-    )
-    # upload_to_testflight(skip_waiting_for_build_processing: true)
   end
 
-  private_lane :upload_staging_to_test_flight do 
-     upload_to_testflight(
-          skip_waiting_for_build_processing: true,
-          username: ENV["MATCH_USERNAME"],
-          app_identifier: ENV["APP_STORE_APP_IDENTIFIER"],
-          notify_external_testers: false,
-          # beta_app_review_info: {
-          #   contact_email: "email@email.com",
-          #   contact_first_name: "Connect",
-          #   contact_last_name: "API",
-          #   contact_phone: "5558675309",
-          #   demo_account_name: "demo@email.com",
-          #   demo_account_password: "connectapi",
-          #   notes: "this is review note for the reviewer <3 thank you for reviewing"
-          # },
-          # localized_app_info: {
-          #   "default": {
-          #     feedback_email: "default@email.com",
-          #     marketing_url: "https://example.com/marketing-default",
-          #     privacy_policy_url: "https://example.com/privacy-default",
-          #     description: "Default description",
-          #   },
-            # "en-GB": {
-            #   feedback_email: "en-gb@email.com",
-            #   marketing_url: "https://example.com/marketing-en-gb",
-            #   privacy_policy_url: "https://example.com/privacy-en-gb",
-            #   description: "en-gb description",
-            # }
-          # },
-          localized_build_info: {
-            "default": {
-              whats_new: "Default changelog",
-            },
-            "en-GB": {
-              whats_new: "en-gb changelog",
-            }
-          }
-        )
+  # MARK: - 6: Build Number
+  desc "Get and increment build number"
+  private_lane :bump_build_number do |options|
+    latest_build = latest_testflight_build_number(
+      app_identifier: ENV["APP_STORE_APP_IDENTIFIER"]
+    )
+    
+    new_build_number = latest_build + 1
+    UI.message "Incrementing build number from #{latest_build} to #{new_build_number}"
+    
+    increment_build_number(build_number: new_build_number)
+    new_build_number
+  end
+
+  # MARK: - 7: Build IOS
+  desc "Build the iOS app (dynamic flavor, obfuscation optional)"
+  private_lane :build_flutter_ios_app do |options|
+    method = options[:method] || "app-store"
+    flavor = options[:flavor] || ENV["SCHEME"] || "staging" 
+    obfuscate = options[:obfuscate] || false
+
+    UI.header "🏗️  Starting iOS build for flavor: #{flavor} (Method: #{method})"
+
+    flutter_root = File.expand_path("../..", __dir__)
+    UI.message "🚀 flutter_root: #{flutter_root}"
+    Dir.chdir(flutter_root) do
+      if File.exist?("#{flutter_root}/pubspec.yaml")
+        build_command = "flutter build ipa --release --flavor #{flavor}"
+        build_command += " --obfuscate --split-debug-info=build/app/outputs/symbols/#{flavor}" if obfuscate
+
+        UI.message "🚀 Running: #{build_command}"
+        sh(build_command)
+      else
+        UI.user_error!("❌ Could not find pubspec.yaml in #{flutter_root}. Make sure Fastlane is run from the iOS directory.")
+      end
+    end
+
+    # Automatically detect latest IPA for the given flavor
+    ipa_dir = File.expand_path("../../build/ios/ipa", __dir__)
+    UI.message "🚀 ipa_dir: #{ipa_dir}"
+    ipa_files = Dir["#{ipa_dir}/*#{flavor}*.ipa"]
+    UI.message "🚀 ipa_files: #{ipa_files}"
+    latest_ipa = ipa_files.max_by { |f| File.mtime(f) }
+    UI.message "🚀 latest_ipa: #{latest_ipa}"
+
+    unless latest_ipa
+      UI.user_error!("❌ No IPA found for flavor '#{flavor}' in #{ipa_dir}.")
+    end
+
+    UI.success "📦 Found latest IPA for #{flavor}: #{latest_ipa}"
+
+    # Return path so lanes like :staging or :production can use it
+    latest_ipa
+  end
+
+  # MARK: - 8: Deployment
+  desc "Push a new beta build to TestFlight"
+  lane :staging do
+    setup_ci if $is_ci
+    
+    setup_app_store_connect
+    setup_code_signing(type: "appstore")
+    
+    bump_build_number
+
+    # Build the obfuscated staging IPA using Flutter
+    ipa_path = build_flutter_ios_app(flavor: "staging", obfuscate: true)
+    UI.message "🚀 ipa_path from staging: #{ipa_path}"
+
+    upload_to_testflight(
+      ipa: ipa_path,
+      skip_waiting_for_build_processing: true,
+      notify_external_testers: false,
+      changelog: ENV["CHANGELOG"] || "Staging obfuscated build 🚀"
+    )
+    
+    UI.success "🚀 Successfully uploaded staging build to TestFlight!"
   end
   
+  desc "Push a production build to App Store"
+  lane :production do
+    setup_ci if $is_ci
+    
+    # Ensure we're on the main/master branch
+    ensure_git_branch(branch: 'main')
+    
+    setup_app_store_connect
+    setup_code_signing(type: "appstore")
+    
+    version = get_version_number(xcodeproj: "Runner.xcodeproj")
+    bump_build_number
+    
+    build_flutter_ios_app(method: "app-store")
+    
+    upload_to_app_store(
+      skip_metadata: false,
+      skip_screenshots: false,
+      submit_for_review: false,
+      automatic_release: false,
+      force: true,
+      precheck_include_in_app_purchases: false
+    )
+    
+    # Tag the release
+    add_git_tag(
+      tag: "v#{version}",
+      message: "Release version #{version}"
+    )
+    push_git_tags
+    
+    UI.success "🎉 Successfully uploaded to App Store!"
+  end
+
+
+
+  # MARK: - 9: Utility
+
+  ##
+  # 🔄 sync_certificates
+  #
+  # Purpose:
+  #   Syncs the latest signing certificates and provisioning profiles from the Match repository.
+  #   This lane is intended for local setup and manual maintenance, not CI.
+  #
+  # How it works:
+  #   - Calls `match` with readonly: false
+  #   - Downloads or generates new certificates/profiles if needed
+  #   - Saves them locally so they can be used by Xcode or other Fastlane lanes
+  #
+  # Parameters:
+  #   - type: The provisioning type ("development", "appstore", etc.)
+  #
+  # Notes:
+  #   - Will upload new certificates to the Match repo if they don’t exist
+  #   - Useful during initial project setup or when certificates are rotated
+  #
+  #
+  desc "Download certificates and provisioning profiles"
+  lane :sync_certificates do |options|
+    type = options[:type] || "development"
+    
+    match(
+      type: type,
+      readonly: false,
+      app_identifier: ENV["APP_STORE_APP_IDENTIFIER"]
+    )
+    
+    UI.success "✅ Certificates synced for #{type}"
+  end
+
+  desc "Update app metadata"
+  lane :update_metadata do
+    setup_ci if $is_ci
+    setup_app_store_connect
+    setup_code_signing(type: "appstore")
+
+    upload_to_app_store(
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      force: true, # Skip HTMl report verification
+      run_precheck_before_submit: false,
+    )
+    
+    UI.success "📝 Metadata updated successfully!"
+  end
+
+  desc "Clean build artifacts"
+  lane :clean do
+    clear_derived_data
+    clean_build_artifacts
+    
+    UI.success "🧹 Cleaned build artifacts!"
+  end
+
+  desc "Setup project for first time"
+  lane :setup do
+    # Install dependencies if using CocoaPods
+    cocoapods if File.exist?('Podfile')
+    
+    # Sync certificates
+    sync_certificates(type: "development")
+    sync_certificates(type: "appstore")
+    
+    UI.success "✅ Project setup complete!"
+  end
+
+  # MARK: - 10: Versioning
+  desc "Bump version number"
+  lane :bump_version do |options|
+    version_type = options[:type] || "patch" # major, minor, patch
+    
+    case version_type
+    when "major"
+      increment_version_number(bump_type: "major")
+    when "minor"
+      increment_version_number(bump_type: "minor")
+    when "patch"
+      increment_version_number(bump_type: "patch")
+    else
+      increment_version_number(version_number: version_type)
+    end
+    
+    version = get_version_number(xcodeproj: "Runner.xcodeproj")
+    UI.success "📌 Version bumped to #{version}"
+  end
+
+  # MARK: - 11: Private Helper
+  private_lane :upload_staging_to_test_flight do |options|
+    changelog = options[:changelog] || "Bug fixes and performance improvements"
+    
+    upload_to_testflight(
+      skip_waiting_for_build_processing: true,
+      notify_external_testers: false,
+      changelog: changelog,
+      localized_build_info: {
+        "default": {
+          whats_new: changelog,
+        }
+      }
+    )
+  end
+
 end

@@ -1,0 +1,27 @@
+Thank you for reviewing TaskMaster Pro!
+
+TEST ACCOUNT DETAILS:
+- Username: reviewer@demo.com
+- Password: ReviewDemo2025!
+
+This demo account has:
+- Pre-populated sample tasks and projects
+- Full access to all Pro features
+- Sample collaboration projects with other users
+
+TESTING NOTES:
+1. The app requires iOS 14.0 or later
+2. Push notifications are optional but enhance the experience
+3. Sign in with Apple is available as an alternative login method
+4. All features work offline; sync happens automatically when online
+
+COMMON USER FLOWS TO TEST:
+1. Create a new task with due date and reminder
+2. Organize tasks into a project
+3. Mark tasks as complete
+4. Try the new Focus Mode (accessible from settings)
+5. Add a widget to home screen
+
+If you have any questions or need assistance during the review process, please contact us at appstore-review@taskmasterpro.com
+
+We appreciate your time and feedback!

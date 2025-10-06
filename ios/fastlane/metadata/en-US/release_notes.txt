@@ -1,0 +1,21 @@
+What's New in This Version:
+
+NEW FEATURES:
+- Introduced Focus Mode to minimize distractions and boost productivity
+- Added recurring task templates for common routines
+- New calendar view for better task scheduling
+- Quick actions from home screen widgets
+
+IMPROVEMENTS:
+- Faster sync performance across devices
+- Enhanced dark mode with better contrast
+- Improved voice input for creating tasks
+- Better notification grouping
+
+BUG FIXES:
+- Fixed crash when editing tasks with special characters
+- Resolved sync conflict issues on poor connections
+- Fixed widget not updating after task completion
+- Corrected time zone display issues
+
+We're always working to make TaskMaster Pro better! If you enjoy using the app, please leave us a review. Have feedback? Contact us at support@taskmasterpro.com

@@ -42,6 +42,7 @@ jobs:
         working-directory: ios
         env:
           CI: true
+          # CHANGELOG:
           APP_STORE_APP_IDENTIFIER: com.company.scalablecicd.staging
           APP_NAME: "[Staging] ScalableCI|CD"
           SCHEME: staging
