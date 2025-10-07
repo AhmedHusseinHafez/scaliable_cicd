@@ -353,7 +353,6 @@ platform :ios do
   desc "Download certificates and provisioning profiles"
   lane :sync_certificates do |options|
     type = options[:type] || "development"
-    get_push_certificate
     
     match(
       type: type,
