@@ -31,6 +31,14 @@ Push a new beta build to TestFlight
 
 Push a production build to App Store
 
+### ios app_rating_config_ios_path
+
+```sh
+[bundle exec] fastlane ios app_rating_config_ios_path
+```
+
+Set app_rating_config_path variable
+
 ### ios sync_certificates
 
 ```sh
@@ -62,14 +70,6 @@ Clean build artifacts
 ```
 
 Setup project for first time
-
-### ios bump_version
-
-```sh
-[bundle exec] fastlane ios bump_version
-```
-
-Bump version number
 
 ----
 

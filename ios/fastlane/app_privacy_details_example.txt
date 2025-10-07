@@ -1,0 +1,156 @@
+//Available Categories include:
+
+// Contact Info: NAME, EMAIL_ADDRESS, PHONE_NUMBER, PHYSICAL_ADDRESS, OTHER_CONTACT_INFO
+// Financial: PAYMENT_INFORMATION, CREDIT_AND_FRAUD, OTHER_FINANCIAL_INFO
+// Location: PRECISE_LOCATION, COARSE_LOCATION
+// User Content: PHOTOS_OR_VIDEOS, AUDIO, CONTACTS, etc.
+// Usage Data: PRODUCT_INTERACTION, ADVERTISING_DATA, BROWSING_HISTORY, etc.
+// Diagnostics: CRASH_DATA, PERFORMANCE_DATA
+
+// Available Purposes:
+
+// APP_FUNCTIONALITY, ANALYTICS, PRODUCT_PERSONALIZATION
+// THIRD_PARTY_ADVERTISING, DEVELOPERS_ADVERTISING, OTHER_PURPOSES
+
+// Data Protections:
+
+// DATA_LINKED_TO_YOU or DATA_NOT_LINKED_TO_YOU (required)
+// DATA_USED_TO_TRACK_YOU (optional)
+
+// Customize the example based on what data your app actually collects!
+
+[
+  {
+    "category": "NAME",
+    "purposes": [
+      "PRODUCT_PERSONALIZATION",
+      "APP_FUNCTIONALITY"
+    ],
+    "data_protections": [
+      "DATA_LINKED_TO_YOU",
+      "DATA_USED_TO_TRACK_YOU"
+    ]
+  },
+  {
+    "category": "EMAIL_ADDRESS",
+    "purposes": [
+      "APP_FUNCTIONALITY",
+      "ANALYTICS"
+    ],
+    "data_protections": [
+      "DATA_LINKED_TO_YOU"
+    ]
+  },
+  {
+    "category": "PHONE_NUMBER",
+    "purposes": [
+      "APP_FUNCTIONALITY"
+    ],
+    "data_protections": [
+      "DATA_LINKED_TO_YOU"
+    ]
+  },
+  {
+    "category": "PHYSICAL_ADDRESS",
+    "purposes": [
+      "APP_FUNCTIONALITY"
+    ],
+    "data_protections": [
+      "DATA_LINKED_TO_YOU"
+    ]
+  },
+  {
+    "category": "PAYMENT_INFORMATION",
+    "purposes": [
+      "APP_FUNCTIONALITY"
+    ],
+    "data_protections": [
+      "DATA_NOT_LINKED_TO_YOU"
+    ]
+  },
+  {
+    "category": "PHOTOS_OR_VIDEOS",
+    "purposes": [
+      "APP_FUNCTIONALITY"
+    ],
+    "data_protections": [
+      "DATA_LINKED_TO_YOU"
+    ]
+  },
+  {
+    "category": "USER_ID",
+    "purposes": [
+      "ANALYTICS",
+      "APP_FUNCTIONALITY"
+    ],
+    "data_protections": [
+      "DATA_LINKED_TO_YOU"
+    ]
+  },
+  {
+    "category": "DEVICE_ID",
+    "purposes": [
+      "ANALYTICS",
+      "DEVELOPERS_ADVERTISING"
+    ],
+    "data_protections": [
+      "DATA_USED_TO_TRACK_YOU"
+    ]
+  },
+  {
+    "category": "PRODUCT_INTERACTION",
+    "purposes": [
+      "ANALYTICS",
+      "PRODUCT_PERSONALIZATION"
+    ],
+    "data_protections": [
+      "DATA_LINKED_TO_YOU"
+    ]
+  },
+  {
+    "category": "ADVERTISING_DATA",
+    "purposes": [
+      "THIRD_PARTY_ADVERTISING"
+    ],
+    "data_protections": [
+      "DATA_USED_TO_TRACK_YOU"
+    ]
+  },
+  {
+    "category": "CRASH_DATA",
+    "purposes": [
+      "ANALYTICS"
+    ],
+    "data_protections": [
+      "DATA_NOT_LINKED_TO_YOU"
+    ]
+  },
+  {
+    "category": "PERFORMANCE_DATA",
+    "purposes": [
+      "ANALYTICS"
+    ],
+    "data_protections": [
+      "DATA_NOT_LINKED_TO_YOU"
+    ]
+  },
+  {
+    "category": "PRECISE_LOCATION",
+    "purposes": [
+      "APP_FUNCTIONALITY",
+      "PRODUCT_PERSONALIZATION"
+    ],
+    "data_protections": [
+      "DATA_LINKED_TO_YOU"
+    ]
+  },
+  {
+    "category": "COARSE_LOCATION",
+    "purposes": [
+      "ANALYTICS"
+    ],
+    "data_protections": [
+      "DATA_NOT_LINKED_TO_YOU"
+    ]
+  }
+]

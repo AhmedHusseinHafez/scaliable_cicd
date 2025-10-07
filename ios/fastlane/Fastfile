@@ -21,6 +21,10 @@ platform :ios do
   $keychain_name = SecureRandom.uuid
   $keychain_password = SecureRandom.hex(100)
   $is_ci = ENV['CI'] || false
+  $price_tier = 0 # Free
+  $copyright = "© #{Time.now.year} ScalableTech. All rights reserved."
+  $primary_category = "BUSINESS" 
+  #  "BOOKS"
 
   # MARK: - 2: Hooks
   before_all do |lane, options|
@@ -109,21 +113,7 @@ platform :ios do
     )
   end
 
-  # MARK: - 6: Build Number
-  desc "Get and increment build number"
-  private_lane :bump_build_number do |options|
-    latest_build = latest_testflight_build_number(
-      app_identifier: ENV["APP_STORE_APP_IDENTIFIER"]
-    )
-    
-    new_build_number = latest_build + 1
-    UI.message "Incrementing build number from #{latest_build} to #{new_build_number}"
-    
-    increment_build_number(build_number: new_build_number)
-    new_build_number
-  end
-
-  # MARK: - 7: Build IOS
+  # MARK: - 6: Build IOS
   desc "Build the iOS app (dynamic flavor, obfuscation optional)"
   private_lane :build_flutter_ios_app do |options|
     method = options[:method] || "app-store"
@@ -148,8 +138,14 @@ platform :ios do
 
     # Automatically detect latest IPA for the given flavor
     ipa_dir = File.expand_path("../../build/ios/ipa", __dir__)
-    UI.message "🚀 ipa_dir: #{ipa_dir}"
-    ipa_files = Dir["#{ipa_dir}/*#{flavor}*.ipa"]
+    ipa_pattern =
+      if flavor == "prod"
+        "#{ipa_dir}/*.ipa"
+      else
+        "#{ipa_dir}/*#{flavor}*.ipa"
+      end
+
+    ipa_files = Dir[ipa_pattern]
     UI.message "🚀 ipa_files: #{ipa_files}"
     latest_ipa = ipa_files.max_by { |f| File.mtime(f) }
     UI.message "🚀 latest_ipa: #{latest_ipa}"
@@ -164,15 +160,17 @@ platform :ios do
     latest_ipa
   end
 
-  # MARK: - 8: Deployment
+  # MARK: - 7: Deployment
   desc "Push a new beta build to TestFlight"
-  lane :staging do
+  lane :staging do |options|
+    version_type = options[:type] || "patch" # major | minor | patch
     setup_ci if $is_ci
     
     setup_app_store_connect
     setup_code_signing(type: "appstore")
     
-    bump_build_number
+    auto_versioning(type: version_type)
+    UI.message "🚀 Using version #{version_info[:version]} (build #{version_info[:build]})"
 
     # Build the obfuscated staging IPA using Flutter
     ipa_path = build_flutter_ios_app(flavor: "staging", obfuscate: true)
@@ -180,7 +178,10 @@ platform :ios do
 
     upload_to_testflight(
       ipa: ipa_path,
+      expire_previous_builds: true,
       skip_waiting_for_build_processing: true,
+      submit_for_review: false,
+      automatic_release: false,
       notify_external_testers: false,
       changelog: ENV["CHANGELOG"] || "Staging obfuscated build 🚀"
     )
@@ -189,7 +190,8 @@ platform :ios do
   end
   
   desc "Push a production build to App Store"
-  lane :production do
+  lane :production do |options|
+    version_type = options[:type] || "patch" # major | minor | patch
     setup_ci if $is_ci
     
     # Ensure we're on the main/master branch
@@ -198,18 +200,26 @@ platform :ios do
     setup_app_store_connect
     setup_code_signing(type: "appstore")
     
-    version = get_version_number(xcodeproj: "Runner.xcodeproj")
-    bump_build_number
-    
-    build_flutter_ios_app(method: "app-store")
+    auto_versioning(type: version_type)
+        
+    # Build the obfuscated staging IPA using Flutter
+    ipa_path = build_flutter_ios_app(method: "app-store", flavor: "prod", obfuscate: true)
+    UI.message "🚀 ipa_path from staging: #{ipa_path}"
+    app_rating_config_path_var = app_rating_config_ios_path
     
     upload_to_app_store(
+      # price_tier: $price_tier,
+      ipa: ipa_path,
+      app_rating_config_path: app_rating_config_path_var,
+      primary_category: $primary_category,
+      copyright: $copyright,
       skip_metadata: false,
-      skip_screenshots: false,
-      submit_for_review: false,
+      skip_screenshots: true,
+      submit_for_review: true,
       automatic_release: false,
       force: true,
-      precheck_include_in_app_purchases: false
+      precheck_include_in_app_purchases: false,
+      run_precheck_before_submit: false,
     )
     
     # Tag the release
@@ -222,11 +232,105 @@ platform :ios do
     UI.success "🎉 Successfully uploaded to App Store!"
   end
 
+  # MARK: - 8: Utility: Setup CI
+  desc "Get Flutter version and build number from pubspec.yaml"
+  private_lane :get_flutter_version do
+    flutter_root = File.expand_path("../..", __dir__)
+    UI.message "🚀 flutter_root: #{flutter_root}"
+
+    Dir.chdir(flutter_root) do
+      pubspec_path = "#{flutter_root}/pubspec.yaml"
+      unless File.exist?(pubspec_path)
+        UI.user_error!("❌ pubspec.yaml not found at #{pubspec_path}")
+      end
+
+      content = File.read(pubspec_path)
+      version_line = content.lines.find { |line| line =~ /^version:/ }
+      unless version_line
+        UI.user_error!("❌ Couldn't find 'version:' in pubspec.yaml")
+      end
+
+      raw_version = version_line.split(":").last.strip
+      version, build = raw_version.split("+")
+      build ||= "0"
+
+      unless version =~ /^\d+(\.\d+){0,2}$/
+        UI.user_error!("❌ Invalid version format: #{version}")
+      end
+
+      UI.message "🚀 version_line: #{version_line}"
+      {
+        version: version,
+        build: build.to_i,
+        pubspec_path: pubspec_path,
+        raw_line: version_line
+      }
+    end
+  end
+
+  desc "Automatically bump version & build in pubspec.yaml and sync with iOS"
+  private_lane :auto_versioning do |options|
+    version_type = options[:type] || "patch" # major | minor | patch
+    xcodeproj_path = "Runner.xcodeproj"
+
+    flutter_info = get_flutter_version
+    old_version = flutter_info[:version]
+    old_build = flutter_info[:build]
+    pubspec_path = flutter_info[:pubspec_path]
+
+    UI.message "📦 Current Flutter version: #{old_version}+#{old_build}"
+
+    # --- Bump semantic version ---
+    segments = old_version.split(".").map(&:to_i)
+    segments << 0 while segments.size < 3
+
+    case version_type
+    when "major"
+      segments[0] += 1
+      segments[1] = 0
+      segments[2] = 0
+    when "minor"
+      segments[1] += 1
+      segments[2] = 0
+    when "patch"
+      segments[2] += 1
+    else
+      UI.user_error!("❌ Invalid bump type '#{version_type}'. Use major, minor, or patch.")
+    end
+
+    new_version = segments.join(".")
+    new_build = old_build + 1
+    new_raw_version = "#{new_version}+#{new_build}"
+
+    # --- Update pubspec.yaml ---
+    content = File.read(pubspec_path)
+    new_content = content.gsub(/^version: .+$/, "version: #{new_raw_version}")
+    File.write(pubspec_path, new_content)
+    UI.success "📝 Updated pubspec.yaml to #{new_raw_version}"
+
+    # --- Update iOS project ---
+    increment_version_number(
+      version_number: new_version,
+      xcodeproj: xcodeproj_path
+    )
+    increment_build_number(
+      build_number: new_build
+    )
+
+    UI.success "📲 Synced iOS version to #{new_version} (Build #{new_build})"
+
+    { version: new_version, build: new_build }
+  end
 
 
-  # MARK: - 9: Utility
+  desc "Set app_rating_config_path variable"
+  lane :app_rating_config_ios_path do
+    fastlane_root = File.expand_path("./", __dir__)
+    app_rating_config_path = "#{fastlane_root}/metadata/app_rating_config_path.json"
+    app_rating_config_path
+  end
 
-  ##
+
   # 🔄 sync_certificates
   #
   # Purpose:
@@ -249,6 +353,7 @@ platform :ios do
   desc "Download certificates and provisioning profiles"
   lane :sync_certificates do |options|
     type = options[:type] || "development"
+    get_push_certificate
     
     match(
       type: type,
@@ -265,7 +370,20 @@ platform :ios do
     setup_app_store_connect
     setup_code_signing(type: "appstore")
 
+    upload_app_privacy_details_to_app_store(
+        json_path: "fastlane/app_privacy_details.json"
+    ) 
+
+    app_rating_config_path_var = app_rating_config_ios_path
+
     upload_to_app_store(
+     submission_information: {
+        content_rights_has_rights: true,
+        content_rights_contains_third_party: true
+      },
+      app_rating_config_path: app_rating_config_path_var,
+      primary_category: $primary_category,
+      copyright: $copyright,
       skip_binary_upload: true,
       skip_screenshots: true,
       force: true, # Skip HTMl report verification
@@ -293,42 +411,6 @@ platform :ios do
     sync_certificates(type: "appstore")
     
     UI.success "✅ Project setup complete!"
-  end
-
-  # MARK: - 10: Versioning
-  desc "Bump version number"
-  lane :bump_version do |options|
-    version_type = options[:type] || "patch" # major, minor, patch
-    
-    case version_type
-    when "major"
-      increment_version_number(bump_type: "major")
-    when "minor"
-      increment_version_number(bump_type: "minor")
-    when "patch"
-      increment_version_number(bump_type: "patch")
-    else
-      increment_version_number(version_number: version_type)
-    end
-    
-    version = get_version_number(xcodeproj: "Runner.xcodeproj")
-    UI.success "📌 Version bumped to #{version}"
-  end
-
-  # MARK: - 11: Private Helper
-  private_lane :upload_staging_to_test_flight do |options|
-    changelog = options[:changelog] || "Bug fixes and performance improvements"
-    
-    upload_to_testflight(
-      skip_waiting_for_build_processing: true,
-      notify_external_testers: false,
-      changelog: changelog,
-      localized_build_info: {
-        "default": {
-          whats_new: changelog,
-        }
-      }
-    )
   end
 
 end
