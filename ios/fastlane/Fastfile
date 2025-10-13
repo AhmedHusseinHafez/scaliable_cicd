@@ -25,6 +25,9 @@ platform :ios do
   $copyright = "© #{Time.now.year} ScalableTech. All rights reserved."
   $primary_category = "BUSINESS" 
   #  "BOOKS"
+  $sentry_org = ENV["SENTRY_ORG"]
+  $sentry_project = ENV["SENTRY_PROJECT"]
+  $sentry_auth_token = ENV["SENTRY_AUTH_TOKEN"]
 
   # MARK: - 2: Hooks
   before_all do |lane, options|
@@ -113,9 +116,59 @@ platform :ios do
     )
   end
 
-  # MARK: - 6: Build IOS
+  # MARK: - 6: Sentry Integration
+  desc "Upload debug symbols to Sentry"
+  lane :upload_symbols_dsym_to_sentry do |options|
+    flavor = options[:flavor] || "prod"
+    
+    unless $sentry_org && $sentry_project && $sentry_auth_token
+      UI.important "⚠️  Sentry environment variables not set. Skipping symbol upload."
+      UI.message "Required: SENTRY_ORG, SENTRY_PROJECT, SENTRY_AUTH_TOKEN"
+      next
+    end
+
+    flutter_root = File.expand_path("../..", __dir__)
+    
+    # Upload Flutter Dart symbols (from obfuscation)
+    dart_symbols_path = "#{flutter_root}/build/app/outputs/symbols/#{flavor}"
+    if Dir.exist?(dart_symbols_path)
+      UI.header "📤 Uploading Flutter Dart symbols to Sentry"
+      sentry_debug_files_upload(
+        auth_token: $sentry_auth_token,
+        org_slug: $sentry_org,
+        project_slug: $sentry_project,
+        path: dart_symbols_path,
+        wait: true # Waits for Sentry to fully process the files (helps catch upload errors)
+      )
+      UI.success "✅ Uploaded Dart symbols"
+    else
+      UI.important "⚠️  Dart symbols not found at #{dart_symbols_path}"
+    end
+    
+    # Upload iOS dSYM files (native symbols)
+    dsym_path = "#{flutter_root}/build/ios/archive/Runner.xcarchive/dSYMs"
+    if Dir.exist?(dsym_path)
+      UI.header "📤 Uploading iOS dSYM files to Sentry"
+      sentry_debug_files_upload(
+        auth_token: $sentry_auth_token,
+        org_slug: $sentry_org,
+        project_slug: $sentry_project,
+        path: dsym_path,
+        type: 'dsym',
+        wait: true, # Waits for Sentry to fully process the files (helps catch upload errors)
+        include_sources: false # Doesn't upload source files (optional, you can set to true if needed)
+      )
+      UI.success "✅ Uploaded dSYM files"
+    else
+      UI.important "⚠️  dSYM files not found at #{dsym_path}"
+    end
+    
+    UI.success "✅ Sentry symbol upload complete"
+  end 
+
+  # MARK: - 7: Build IOS
   desc "Build the iOS app (dynamic flavor, obfuscation optional)"
-  private_lane :build_flutter_ios_app do |options|
+  lane :build_flutter_ios_app do |options|
     method = options[:method] || "app-store"
     flavor = options[:flavor] || ENV["SCHEME"] || "staging" 
     obfuscate = options[:obfuscate] || false
@@ -160,7 +213,7 @@ platform :ios do
     latest_ipa
   end
 
-  # MARK: - 7: Deployment
+  # MARK: - 8: Deployment
   desc "Push a new beta build to TestFlight"
   lane :staging do |options|
     version_type = options[:type] || "patch" # major | minor | patch
@@ -202,9 +255,10 @@ platform :ios do
     
     auto_versioning(type: version_type)
         
-    # Build the obfuscated staging IPA using Flutter
+    # Build the obfuscated production IPA using Flutter
     ipa_path = build_flutter_ios_app(method: "app-store", flavor: "prod", obfuscate: true)
-    UI.message "🚀 ipa_path from staging: #{ipa_path}"
+    UI.message "🚀 ipa_path from production: #{ipa_path}"
+    
     app_rating_config_path_var = app_rating_config_ios_path
     
     upload_to_app_store(
@@ -221,7 +275,9 @@ platform :ios do
       precheck_include_in_app_purchases: false,
       run_precheck_before_submit: false,
     )
-    
+
+    upload_symbols_dsym_to_sentry(flavor: "prod")
+
     # Tag the release
     add_git_tag(
       tag: "v#{version}",
@@ -232,7 +288,7 @@ platform :ios do
     UI.success "🎉 Successfully uploaded to App Store!"
   end
 
-  # MARK: - 8: Utility: Setup CI
+  # MARK: - 9: Utility: Setup CI
   desc "Get Flutter version and build number from pubspec.yaml"
   private_lane :get_flutter_version do
     flutter_root = File.expand_path("../..", __dir__)
@@ -346,7 +402,7 @@ platform :ios do
   #   - type: The provisioning type ("development", "appstore", etc.)
   #
   # Notes:
-  #   - Will upload new certificates to the Match repo if they don’t exist
+  #   - Will upload new certificates to the Match repo if they don't exist
   #   - Useful during initial project setup or when certificates are rotated
   #
   #

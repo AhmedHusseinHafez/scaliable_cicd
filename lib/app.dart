@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'flavors.dart';
 import 'pages/my_home_page.dart';
@@ -11,9 +10,6 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      navigatorObservers: F.appFlavor == Flavor.prod
-          ? [SentryNavigatorObserver()]
-          : [],
       title: F.title,
       theme: ThemeData(primarySwatch: Colors.blue),
       home: _flavorBanner(child: MyHomePage(), show: kDebugMode),

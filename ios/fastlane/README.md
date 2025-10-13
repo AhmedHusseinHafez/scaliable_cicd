@@ -15,6 +15,22 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 ## iOS
 
+### ios upload_symbols_dsym_to_sentry
+
+```sh
+[bundle exec] fastlane ios upload_symbols_dsym_to_sentry
+```
+
+Upload debug symbols to Sentry
+
+### ios build_flutter_ios_app
+
+```sh
+[bundle exec] fastlane ios build_flutter_ios_app
+```
+
+Build the iOS app (dynamic flavor, obfuscation optional)
+
 ### ios staging
 
 ```sh
