@@ -20,7 +20,7 @@ class App extends StatelessWidget {
       ? Banner(
           location: BannerLocation.topStart,
           message: F.name,
-          color: Colors.green.withAlpha(150),
+          color: Colors.green.withAlpha(120),
           textStyle: TextStyle(
             fontWeight: FontWeight.w700,
             fontSize: 12.0,
