@@ -1,0 +1,44 @@
+name: Gemini PR Automator
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+jobs:
+  gemini-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Install Gemini CLI
+        run: npm install -g @google/gemini-cli
+      - name: Summarize PR
+        run: |
+          gemini summarize --diff > summary.md
+      - name: Generate Tests
+        run: |
+          gemini generate-tests --diff > tests-summary.md
+      - name: Auto Review PR
+        run: |
+          gemini review --diff > review.md
+      - name: Changelog Entry
+        run: |
+          gemini changelog --diff > changelog.md
+      - name: Post AI Comment to PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: ./pr-comment.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Merge Everything
+        run: |
+          cat summary.md > pr-comment.md
+          echo -e "\n\n---\n" >> pr-comment.md
+          cat tests-summary.md >> pr-comment.md
+          echo -e "\n\n---\n" >> pr-comment.md
+          cat review.md >> pr-comment.md
+          echo -e "\n\n---\n" >> pr-comment.md
+          cat changelog.md >> pr-comment.md
