@@ -34,8 +34,25 @@ jobs:
         run: echo "Authentication set for Gemini ✅"
 
       - name: Run Gemini AI Code Review
+        id: gemini_review
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           echo "🧠 Running Gemini AI Code Review..."
-          gemini -p "You are a senior Flutter code reviewer. Review this repository’s Flutter code for best practices, readability, performance issues, and potential bugs. Output a detailed Markdown summary for GitHub PR comments."
+          REVIEW=$(gemini -p "You are a senior Flutter code reviewer. Review this repository’s Flutter code for best practices, readability, performance issues, and potential bugs. Output a detailed Markdown summary.")
+          echo "REVIEW<<EOF" >> $GITHUB_ENV
+          echo "$REVIEW" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Post Review Summary to PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const review = process.env.REVIEW;
+            github.rest.issues.createComment({
+              issue_number: context.payload.pull_request.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: review
+            })
