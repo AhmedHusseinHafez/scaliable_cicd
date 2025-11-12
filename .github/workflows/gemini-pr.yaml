@@ -31,12 +31,11 @@ jobs:
       - name: Set up Gemini Auth
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: echo "Authentication set for Gemini"
+        run: echo "Authentication set for Gemini ✅"
 
-      - name: Run Gemini Code Review
+      - name: Run Gemini AI Code Review
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "🧠 Running Gemini AI Code Review..."
-          gemini review --provider=github --language=flutter --severity=all --verbose
+          gemini -p "You are a senior Flutter code reviewer. Review this repository’s Flutter code for best practices, readability, performance issues, and potential bugs. Output a detailed Markdown summary for GitHub PR comments."
