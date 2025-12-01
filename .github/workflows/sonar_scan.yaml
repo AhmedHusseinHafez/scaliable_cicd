@@ -13,9 +13,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: subosito/flutter-action@v2
+      - name: Install Flutter stable channel
+        uses: subosito/flutter-action@v2
+        id: flutter-action
         with:
-          flutter-version: "stable"
+          channel: stable
           cache: true
 
       - name: Get Dependencies
